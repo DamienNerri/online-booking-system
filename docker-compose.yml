@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-booking}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-booking}
+      POSTGRES_DB: ${POSTGRES_DB:-booking}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-booking} -d ${POSTGRES_DB:-booking}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  api:
+    build: .
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-booking};Username=${POSTGRES_USER:-booking};Password=${POSTGRES_PASSWORD:-booking}"
+      Jwt__Secret: "${Jwt__Secret:-dev-secret-please-change-me-with-a-long-random-value-0123456789}"
+      Jwt__Issuer: "online-booking-system"
+      Jwt__ExpiresMinutes: "60"
+      Booking__HoldTtlSeconds: "${Booking__HoldTtlSeconds:-300}"
+      RateLimit__WindowSeconds: "${RateLimit__WindowSeconds:-60}"
+      RateLimit__MaxRequests: "${RateLimit__MaxRequests:-100}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "8080"
+    deploy:
+      replicas: 3
+
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./infra/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+    ports:
+      - "8088:80"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

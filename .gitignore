@@ -1,0 +1,14 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+
+# Secrets / env
+.env
+
+# Divers
+*.log
+coverage/
+dist/
+node_modules/
