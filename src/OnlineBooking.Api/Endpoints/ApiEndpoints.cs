@@ -30,7 +30,7 @@ public static class ApiEndpoints
 
     private static void MapAvailability(WebApplication app)
     {
-        // Consultation ouverte (Req 1) : pas d'authentification requise pour chercher.
+        // Consultation ouverte, sans authentification (Req 1).
         app.MapGet("/api/availability", async (
             [FromQuery] string type,
             [FromQuery] string from,
@@ -49,7 +49,7 @@ public static class ApiEndpoints
 
     private static void MapBookings(WebApplication app)
     {
-        // Toutes les opérations de réservation exigent une authentification (Req 8).
+        // Authentification requise (Req 8).
         var bookings = app.MapGroup("/api/bookings").RequireAuthorization();
 
         bookings.MapPost("/", async (CreateBookingRequest req, ClaimsPrincipal user,

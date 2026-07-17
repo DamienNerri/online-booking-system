@@ -6,11 +6,8 @@ namespace OnlineBooking.Api.Middleware;
 
 /// <summary>
 /// Limitation de débit par client (fenêtre glissante en mémoire), identifié par
-/// l'utilisateur authentifié à défaut par l'IP (Req 9.3). Répond 429 au-delà du seuil.
-///
-/// Note distribuée : cette implémentation est locale au nœud. Pour un comptage
-/// global inter-nœuds, brancher un magasin partagé (Redis). Suffisant ici pour
-/// démontrer le mécanisme de protection.
+/// l'utilisateur ou à défaut par l'IP (Req 9.3). Locale au nœud : un comptage
+/// inter-nœuds nécessiterait un magasin partagé (Redis).
 /// </summary>
 public sealed class RateLimitMiddleware
 {

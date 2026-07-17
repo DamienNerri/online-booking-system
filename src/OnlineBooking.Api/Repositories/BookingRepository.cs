@@ -4,12 +4,7 @@ using OnlineBooking.Api.Models;
 
 namespace OnlineBooking.Api.Repositories;
 
-/// <summary>
-/// Couche d'accès aux données. Toutes les requêtes sont paramétrées (protection
-/// contre l'injection SQL, Req 9.2). Le pool de connexions est géré par
-/// <see cref="NpgsqlDataSource"/>. Les opérations transactionnelles (réservation,
-/// confirmation, annulation) sont ajoutées dans les vagues suivantes.
-/// </summary>
+/// <summary>Accès aux données ; requêtes paramétrées contre l'injection SQL (Req 9.2).</summary>
 public sealed class BookingRepository
 {
     private readonly NpgsqlDataSource _dataSource;
@@ -83,11 +78,8 @@ public sealed class BookingRepository
     }
 
     /// <summary>
-    /// Crée une réservation atomique (hold) sur un ensemble de slots.
-    /// Les lignes visées sont verrouillées via SELECT ... FOR UPDATE, ce qui
-    /// sérialise les demandes concurrentes portant sur les mêmes slots
-    /// (Req 2, Req 3, Property 1, Property 3). Tout ou rien : la moindre
-    /// indisponibilité annule l'intégralité de l'opération (Req 2.2).
+    /// Crée un hold atomique sur un ensemble de slots via SELECT ... FOR UPDATE
+    /// (sérialisation, Req 2/3). Tout ou rien (Req 2.2).
     /// </summary>
     public async Task<(long BookingId, DateTime ExpiresAtUtc)> ReserveAsync(
         long userId, long[] slotIds, int holdTtlSeconds, CancellationToken ct = default)
@@ -103,7 +95,7 @@ public sealed class BookingRepository
         await using var tx = await conn.BeginTransactionAsync(ct);
         try
         {
-            // 1. Verrouiller les slots visés (sérialisation de la concurrence).
+            // 1. Verrouiller les slots visés.
             var statuses = new Dictionary<long, string>();
             await using (var sel = conn.CreateCommand())
             {
@@ -117,7 +109,7 @@ public sealed class BookingRepository
                 }
             }
 
-            // 2. Vérifier existence et disponibilité de TOUS les slots.
+            // 2. Vérifier existence et disponibilité des slots.
             foreach (var id in slotIds)
             {
                 if (!statuses.TryGetValue(id, out var status))
@@ -151,8 +143,7 @@ public sealed class BookingRepository
                 await upd.ExecuteNonQueryAsync(ct);
             }
 
-            // 5. Lier réservation <-> slots (l'index unique partiel garantit
-            //    l'invariant anti-surréservation, même en cas de course résiduelle).
+            // 5. Lier réservation <-> slots (index unique partiel = garde anti-surréservation).
             await using (var link = conn.CreateCommand())
             {
                 link.Transaction = tx;
@@ -245,10 +236,7 @@ public sealed class BookingRepository
         }
     }
 
-    /// <summary>
-    /// Libère les holds expirés en une seule instruction atomique (Req 4.3).
-    /// Retourne le nombre de réservations expirées.
-    /// </summary>
+    /// <summary>Libère les holds expirés en une instruction atomique (Req 4.3).</summary>
     public async Task<int> ReleaseExpiredHoldsAsync(CancellationToken ct = default)
     {
         const string sql = """
