@@ -93,7 +93,7 @@ async function authenticate(path) {
         state.role = res.role;
         persistSession();
         renderSession();
-        message("Connecté.", "success");
+        message("Connecté à la plateforme de réservation d'hôtel.", "success");
     } catch (e) {
         message(e.message);
     }
@@ -124,18 +124,35 @@ async function search() {
 
 function renderResults(items) {
     const box = $("results");
-    box.innerHTML = "";
+    box.textContent = "";
     if (!items || items.length === 0) {
-        box.innerHTML = '<p class="muted">Aucune disponibilité sur cette période.</p>';
+        const p = document.createElement("p");
+        p.className = "muted";
+        p.textContent = "Aucune chambre disponible pour ces dates.";
+        box.appendChild(p);
         hide($("btn-book"));
         return;
     }
     items.slice(0, 60).forEach((it) => {
         const el = document.createElement("div");
-        el.className = "slot";
-        el.innerHTML = `<div>Ressource #${it.resourceId}</div>
-            <div class="sid">slot ${it.slotId}</div>
-            <div>${it.periodStart} → ${it.periodEnd}</div>`;
+        el.className = "room-card";
+
+        // textContent : les données du serveur ne sont jamais interprétées
+        // comme du HTML (protection XSS).
+        const title = document.createElement("div");
+        title.className = "room-title";
+        title.textContent = `Chambre ${it.resourceId}`;
+        el.appendChild(title);
+
+        const sid = document.createElement("div");
+        sid.className = "sid";
+        sid.textContent = `slot ${it.slotId}`;
+        el.appendChild(sid);
+
+        const dates = document.createElement("div");
+        dates.textContent = `${it.periodStart} → ${it.periodEnd}`;
+        el.appendChild(dates);
+
         el.onclick = () => {
             if (state.selected.has(it.slotId)) { state.selected.delete(it.slotId); el.classList.remove("selected"); }
             else { state.selected.add(it.slotId); el.classList.add("selected"); }
@@ -158,7 +175,7 @@ async function book() {
         });
         persistBookings();
         renderBookings();
-        message(`Réservation ${res.bookingId} créée (hold).`, "success");
+        message(`Réservation ${res.bookingId} créée (en attente de confirmation).`, "success");
         search(); // rafraîchit la disponibilité
     } catch (e) {
         message(e.message);
@@ -170,7 +187,7 @@ async function confirmBooking(id) {
     try {
         const res = await api(`/api/bookings/${id}/confirm`, { method: "POST", auth: true });
         updateBooking(id, { status: res.status, expiresAt: null });
-        message(`Réservation ${id} confirmée.`, "success");
+        message(`Réservation ${id} confirmée. Chambre(s) réservée(s).`, "success");
     } catch (e) {
         // Le hold a pu expirer entre-temps : refléter le vrai statut côté UI.
         if (/expir/i.test(e.message)) { updateBooking(id, { status: "EXPIRED", expiresAt: null }); search(); }
@@ -183,7 +200,7 @@ async function cancelBooking(id) {
     try {
         await api(`/api/bookings/${id}`, { method: "DELETE", auth: true });
         updateBooking(id, { status: "CANCELLED", expiresAt: null });
-        message(`Réservation ${id} annulée.`, "success");
+        message(`Réservation ${id} annulée. Chambre(s) libérée(s).`, "success");
         search();
     } catch (e) { message(e.message); }
 }
@@ -198,20 +215,46 @@ function updateBooking(id, patch) {
 function renderBookings() {
     const box = $("bookings");
     if (state.bookings.length === 0) {
-        box.innerHTML = '<p class="muted">Aucune réservation pour l\'instant.</p>';
+        box.textContent = "";
+        const p = document.createElement("p");
+        p.className = "muted";
+        p.textContent = "Aucune réservation pour l'instant.";
+        box.appendChild(p);
         return;
     }
-    box.innerHTML = "";
+    box.textContent = "";
     state.bookings.forEach((b) => {
         const el = document.createElement("div");
-        el.className = "booking";
-        const holdInfo = b.status === "HOLD" && b.expiresAt
-            ? ` · <span class="countdown" data-exp="${b.expiresAt}" data-id="${b.bookingId}"></span>` : "";
-        el.innerHTML = `<div class="meta">
-                <strong>#${b.bookingId}</strong>
-                <span class="badge ${b.status}">${b.status}</span>
-                <span class="muted">slots ${b.slotIds.join(", ")}${holdInfo}</span>
-            </div>`;
+        el.className = `booking ${b.status}`;
+
+        const meta = document.createElement("div");
+        meta.className = "meta";
+
+        const strong = document.createElement("strong");
+        strong.textContent = `#${b.bookingId}`;
+        meta.appendChild(strong);
+
+        const badge = document.createElement("span");
+        badge.className = `badge ${b.status}`;
+        badge.textContent = b.status;
+        meta.appendChild(badge);
+
+        const info = document.createElement("span");
+        info.className = "muted";
+        info.textContent = ` chambres ${b.slotIds.join(", ")}`;
+        meta.appendChild(info);
+
+        if (b.status === "HOLD" && b.expiresAt) {
+            const sep = document.createTextNode(" · ");
+            meta.appendChild(sep);
+            const cd = document.createElement("span");
+            cd.className = "countdown";
+            cd.dataset.exp = b.expiresAt;
+            cd.dataset.id = String(b.bookingId);
+            meta.appendChild(cd);
+        }
+        el.appendChild(meta);
+
         const actions = document.createElement("div");
         actions.className = "row";
         if (b.status === "HOLD") {
@@ -257,5 +300,15 @@ $("btn-register").onclick = () => authenticate("/api/auth/register");
 $("logout").onclick = logout;
 $("btn-search").onclick = search;
 $("btn-book").onclick = book;
+
+// Pré-remplit des dates par défaut dans le futur (arrivée = demain, départ = +2 j)
+// pour rester cohérent avec le refus des dates passées côté API (FIX 1).
+(function setDefaultDates() {
+    const fmt = (d) => d.toISOString().slice(0, 10);
+    const arrival = new Date(); arrival.setDate(arrival.getDate() + 1);
+    const departure = new Date(); departure.setDate(departure.getDate() + 2);
+    if (!$("from").value) $("from").value = fmt(arrival);
+    if (!$("to").value) $("to").value = fmt(departure);
+})();
 
 renderSession();

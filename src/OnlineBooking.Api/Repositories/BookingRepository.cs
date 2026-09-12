@@ -275,6 +275,43 @@ public sealed class BookingRepository
         return (int)count;
     }
 
+    /// <summary>
+    /// 🔴 FIX 3 : Récupère toutes les réservations d'un utilisateur.
+    /// </summary>
+    public async Task<IReadOnlyList<BookingResponse>> GetUserBookingsAsync(
+        long userId, CancellationToken ct = default)
+    {
+        const string sql = """
+            SELECT b.id, b.status, b.expires_at,
+                   array_remove(array_agg(bs.slot_id) FILTER (WHERE bs.active), NULL) AS slot_ids
+            FROM bookings b
+            LEFT JOIN booking_slots bs ON b.id = bs.booking_id AND bs.active
+            WHERE b.user_id = @userId
+            GROUP BY b.id, b.status, b.expires_at, b.created_at
+            ORDER BY b.created_at DESC;
+            """;
+
+        await using var cmd = _dataSource.CreateCommand(sql);
+        cmd.Parameters.AddWithValue("userId", userId);
+
+        var bookings = new List<BookingResponse>();
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            var bookingId = reader.GetInt64(0);
+            var status = reader.GetString(1);
+            DateTimeOffset? expiresAt = reader.IsDBNull(2)
+                ? null
+                : reader.GetFieldValue<DateTimeOffset>(2);
+            var slotIds = reader.IsDBNull(3)
+                ? Array.Empty<long>()
+                : reader.GetFieldValue<long[]>(3);
+
+            bookings.Add(new BookingResponse(bookingId, status, expiresAt, slotIds));
+        }
+        return bookings;
+    }
+
     // --- Helpers transactionnels ---
 
     private static async Task<(long OwnerId, string Status, DateTime? ExpiresAt)> LockBookingAsync(

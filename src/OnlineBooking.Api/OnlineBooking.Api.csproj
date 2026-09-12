@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>OnlineBooking.Api</RootNamespace>
+    <UserSecretsId>online-booking-system-api</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Réservation en ligne</title>
+    <title>Réservation d'Hôtel</title>
     <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
     <header>
-        <h1>Réservation en ligne</h1>
+        <h1>Réservation d'Hôtel</h1>
         <div id="session" class="session hidden">
             <span id="who"></span>
             <span id="node" class="node" title="Nœud ayant répondu"></span>
@@ -34,20 +34,19 @@
         <!-- Application (après connexion) -->
         <section id="app" class="hidden">
             <div class="card">
-                <h2>Rechercher des disponibilités</h2>
+                <h2>Rechercher une chambre</h2>
                 <div class="row">
-                    <label>Type
+                    <label>Type de chambre
                         <select id="type">
                             <option value="HOTEL_ROOM">Chambre d'hôtel</option>
-                            <option value="FLIGHT_SEAT">Siège d'avion</option>
                         </select>
                     </label>
-                    <label>Du <input id="from" type="date" value="2026-01-01" /></label>
-                    <label>Au <input id="to" type="date" value="2026-01-08" /></label>
+                    <label>Date d'arrivée <input id="from" type="date" /></label>
+                    <label>Date de départ <input id="to" type="date" /></label>
                     <button id="btn-search">Rechercher</button>
                 </div>
                 <div id="results" class="results"></div>
-                <button id="btn-book" class="hidden">Réserver la sélection</button>
+                <button id="btn-book" class="hidden">Réserver ces chambres</button>
             </div>
 
             <div class="card">

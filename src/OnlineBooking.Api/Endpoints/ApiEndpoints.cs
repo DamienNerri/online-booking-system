@@ -52,6 +52,15 @@ public static class ApiEndpoints
         // Toutes les opérations de réservation exigent une authentification (Req 8).
         var bookings = app.MapGroup("/api/bookings").RequireAuthorization();
 
+        // 🔴 FIX 3 : GET /api/bookings - Lister réservations utilisateur
+        bookings.MapGet("/", async (ClaimsPrincipal user,
+            BookingService svc, CancellationToken ct) =>
+        {
+            var userId = GetUserId(user);
+            var userBookings = await svc.GetUserBookingsAsync(userId, ct);
+            return Results.Ok(userBookings);
+        });
+
         bookings.MapPost("/", async (CreateBookingRequest req, ClaimsPrincipal user,
             BookingService svc, CancellationToken ct) =>
         {

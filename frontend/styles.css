@@ -9,6 +9,7 @@
     --ok: #34d399;
     --warn: #fbbf24;
     --err: #f87171;
+    --hotel-accent: #d4af37; /* or — touche hôtel haut de gamme */
 }
 
 * { box-sizing: border-box; }
@@ -26,7 +27,7 @@ header {
     align-items: center;
     justify-content: space-between;
     padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 3px solid var(--hotel-accent);
     background: #0b1220;
 }
 
@@ -80,18 +81,19 @@ button.danger { background: var(--err); color: #3b0a0a; }
 button.ok { background: var(--ok); color: #04372a; }
 
 .results { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .6rem; margin: 1rem 0; }
-.slot {
+.slot, .room-card {
     border: 1px solid var(--line);
     border-radius: 8px;
     padding: .6rem;
     font-size: .85rem;
     cursor: pointer;
     background: #0b1220;
-    transition: border-color .15s;
+    transition: border-color .15s, box-shadow .15s;
 }
-.slot:hover { border-color: var(--accent); }
-.slot.selected { border-color: var(--accent-2); background: #17204a; }
-.slot .sid { color: var(--muted); font-size: .75rem; }
+.slot:hover, .room-card:hover { border-color: var(--hotel-accent); box-shadow: 0 2px 10px rgba(212, 175, 55, .15); }
+.slot.selected, .room-card.selected { border-color: var(--hotel-accent); background: #17204a; }
+.slot .sid, .room-card .sid { color: var(--muted); font-size: .75rem; }
+.room-card .room-title { font-weight: 700; color: var(--text); }
 
 .bookings { display: flex; flex-direction: column; gap: .6rem; }
 .booking {
@@ -100,10 +102,14 @@ button.ok { background: var(--ok); color: #04372a; }
     justify-content: space-between;
     gap: .75rem;
     border: 1px solid var(--line);
+    border-left: 4px solid var(--line);
     border-radius: 8px;
     padding: .6rem .8rem;
     flex-wrap: wrap;
 }
+.booking.HOLD { border-left-color: var(--warn); }
+.booking.CONFIRMED { border-left-color: var(--ok); }
+.booking.CANCELLED, .booking.EXPIRED { border-left-color: var(--err); opacity: .75; }
 .booking .meta { font-size: .85rem; }
 .badge { padding: .15rem .5rem; border-radius: 999px; font-size: .72rem; font-weight: 700; }
 .badge.HOLD { background: #422006; color: var(--warn); }

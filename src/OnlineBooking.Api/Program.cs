@@ -29,6 +29,16 @@ builder.Services.AddScoped<AuthService>();
 // --- Authentification JWT (Req 8) ---
 var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("Section Jwt manquante.");
+
+// 🔴 FIX 4 : Valider que JWT Secret est fourni (pas vide dev)
+if (string.IsNullOrWhiteSpace(jwt.Secret))
+{
+    throw new InvalidOperationException(
+        "Jwt:Secret est vide. Utiliser:\n" +
+        "  Dev: dotnet user-secrets set \"Jwt:Secret\" \"your-long-random-secret\"\n" +
+        "  Prod: Variable d'env JWT_SECRET");
+}
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

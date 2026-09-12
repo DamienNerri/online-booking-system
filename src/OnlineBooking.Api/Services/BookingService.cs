@@ -28,11 +28,17 @@ public sealed class BookingService
     {
         if (string.IsNullOrWhiteSpace(resourceType))
         {
-            throw new ValidationException("Le type de ressource est requis.");
+            throw new ValidationException("Veuillez sélectionner un type de chambre.");
         }
         if (to <= from)
         {
-            throw new ValidationException("La date de fin doit être postérieure à la date de début.");
+            throw new ValidationException("La date de départ doit être postérieure à la date d'arrivée.");
+        }
+
+        // 🔴 FIX 1 : Validation dates passées
+        if (from < DateOnly.FromDateTime(DateTime.Today))
+        {
+            throw new ValidationException("Impossible de réserver dans le passé. Veuillez choisir une date d'arrivée future.");
         }
 
         var slots = await _repo.FindAvailableSlotsAsync(resourceType, from, to, ct);
@@ -45,11 +51,11 @@ public sealed class BookingService
     {
         if (req.SlotIds is null || req.SlotIds.Length == 0)
         {
-            throw new ValidationException("Au moins un slot doit être fourni.");
+            throw new ValidationException("Veuillez sélectionner au moins une chambre.");
         }
         if (req.SlotIds.Distinct().Count() != req.SlotIds.Length)
         {
-            throw new ValidationException("Les slots ne doivent pas être dupliqués.");
+            throw new ValidationException("Une même chambre a été sélectionnée plusieurs fois.");
         }
 
         var (bookingId, expiresAtUtc) = await _repo.ReserveAsync(userId, req.SlotIds, _options.HoldTtlSeconds, ct);
@@ -72,5 +78,13 @@ public sealed class BookingService
     {
         await _repo.CancelAsync(bookingId, userId, isAdmin, ct);
         _logger.LogInformation("Réservation {BookingId} annulée par utilisateur {UserId}", bookingId, userId);
+    }
+
+    // 🔴 FIX 3 : Récupérer toutes les réservations utilisateur
+    public async Task<IReadOnlyList<BookingResponse>> GetUserBookingsAsync(
+        long userId, CancellationToken ct = default)
+    {
+        var bookings = await _repo.GetUserBookingsAsync(userId, ct);
+        return bookings;
     }
 }

@@ -12,3 +12,7 @@ obj/
 coverage/
 dist/
 node_modules/
+
+# macOS / IDE
+.DS_Store
+.idea/
