@@ -2,11 +2,7 @@ using OnlineBooking.Api.Repositories;
 
 namespace OnlineBooking.Api.Workers;
 
-/// <summary>
-/// Tâche de fond périodique qui libère les réservations temporaires (HOLD)
-/// expirées (Req 4.3). L'opération est atomique côté base (une seule requête CTE),
-/// donc sûre même si plusieurs nœuds exécutent ce worker en parallèle.
-/// </summary>
+/// <summary>Tâche de fond qui libère les holds expirés (Req 4.3), sûre multi-nœuds.</summary>
 public sealed class HoldExpirationWorker : BackgroundService
 {
     private readonly IServiceProvider _services;

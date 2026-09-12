@@ -1,9 +1,6 @@
 namespace OnlineBooking.Api.Common;
 
-/// <summary>
-/// Exception applicative portant un code HTTP. Mappée en réponse par le
-/// middleware de gestion d'erreurs. (Design § Error Handling)
-/// </summary>
+/// <summary>Exception applicative avec code HTTP, mappée par le middleware d'erreurs.</summary>
 public class AppException : Exception
 {
     public int StatusCode { get; }

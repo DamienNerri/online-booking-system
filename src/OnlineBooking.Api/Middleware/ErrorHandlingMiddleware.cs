@@ -2,10 +2,7 @@ using OnlineBooking.Api.Common;
 
 namespace OnlineBooking.Api.Middleware;
 
-/// <summary>
-/// Convertit les exceptions en réponses JSON avec le bon code HTTP et journalise
-/// les anomalies (Req 9.4). Empêche toute fuite de détail interne au client.
-/// </summary>
+/// <summary>Convertit les exceptions en réponses JSON avec le bon code HTTP (Req 9.4).</summary>
 public sealed class ErrorHandlingMiddleware
 {
     private readonly RequestDelegate _next;

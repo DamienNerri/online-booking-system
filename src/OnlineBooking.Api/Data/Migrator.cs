@@ -2,11 +2,7 @@ using Npgsql;
 
 namespace OnlineBooking.Api.Data;
 
-/// <summary>
-/// Applique les scripts SQL de migration versionnés (dossier /migrations) de
-/// façon idempotente et ordonnée. Chaque script appliqué est enregistré dans
-/// la table schema_migrations. (Req 7.3 durabilité, Req 10 automatisation)
-/// </summary>
+/// <summary>Applique les scripts SQL de /migrations de façon idempotente et ordonnée.</summary>
 public sealed class Migrator
 {
     private readonly NpgsqlDataSource _dataSource;
@@ -20,15 +16,14 @@ public sealed class Migrator
         _logger = logger;
     }
 
-    // Clé arbitraire du verrou consultatif global de migration.
+    // Clé du verrou consultatif global de migration.
     private const long AdvisoryLockKey = 897654321L;
 
     public async Task MigrateAsync(CancellationToken ct = default)
     {
         await using var conn = await _dataSource.OpenConnectionAsync(ct);
 
-        // Verrou consultatif : un seul nœud migre à la fois. Les autres attendent
-        // puis constatent que les migrations sont déjà appliquées (Req 6/7 multi-nœuds).
+        // Un seul nœud migre à la fois ; les autres attendent puis passent (Req 6/7).
         await using (var lockCmd = conn.CreateCommand())
         {
             lockCmd.CommandText = "SELECT pg_advisory_lock(@k)";

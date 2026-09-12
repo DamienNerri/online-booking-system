@@ -10,10 +10,7 @@ using OnlineBooking.Api.Repositories;
 
 namespace OnlineBooking.Api.Services;
 
-/// <summary>
-/// Gestion de l'authentification : inscription, connexion, émission de JWT.
-/// Les mots de passe sont hachés via BCrypt (Req 8.4 : jamais stockés en clair).
-/// </summary>
+/// <summary>Inscription, connexion et émission de JWT. Mots de passe hachés via BCrypt (Req 8.4).</summary>
 public sealed class AuthService
 {
     private readonly UserRepository _users;
