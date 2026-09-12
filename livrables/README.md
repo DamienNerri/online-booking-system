@@ -14,7 +14,6 @@ Ce dossier regroupe les livrables demandés par le sujet, rédigés sur le domai
 | 1 | **Dossier d'architecture logicielle** (livrable principal) : besoins, parcours, choix d'architecture avec heuristiques et compromis, **diagrammes Mermaid** (C4 conteneurs, déploiement, cas d'usage, ER, machines à états, séquence de concurrence), justification, ADR | [`1-dossier-architecture.md`](1-dossier-architecture.md) |
 | 2 | **Rapport d'analyse de performance** : scénarios critiques, mesures réelles, goulots, optimisations priorisées, protocole vers 500 utilisateurs | [`2-rapport-performance.md`](2-rapport-performance.md) |
 | 3 | **Rapport d'accessibilité RGAA 4** : **audit outillé WAVE** (captures dans `img/`), audit manuel de l'écran clé, non-conformités + corrections, plan d'accessibilité (diagrammes Mermaid) | [`3-rapport-accessibilite-rgaa4.md`](3-rapport-accessibilite-rgaa4.md) |
-| 4 | **Support de soutenance** : plan minuté, slides, script de démo, Q&R | [`4-soutenance.md`](4-soutenance.md) |
 | — | **Journal des décisions d'architecture (ADR)** | [`adr/ADR.md`](adr/ADR.md) |
 
 Le **prototype** (livrable optionnel) est l'application elle-même :
@@ -25,7 +24,7 @@ Le **prototype** (livrable optionnel) est l'application elle-même :
 1. Dossier d'architecture logicielle (principal) → Livrable 1 (+ ADR).
 2. Rapport d'analyse de performance → Livrable 2.
 3. Rapport d'accessibilité RGAA 4 → Livrable 3.
-4. Présentation de soutenance → Livrable 4.
+4. Présentation de soutenance → support préparé hors dépôt (non versionné).
 5. Maquette / prototype (optionnel) → application fonctionnelle (front + API).
 
 ## Documents source réutilisés
