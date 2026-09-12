@@ -31,8 +31,8 @@ Le **prototype** (livrable optionnel) est l'application elle-même :
 ## Documents source réutilisés
 
 - Architecture technique détaillée : `../docs/ARCHITECTURE.md`
-- Cartographie des tensions non fonctionnelles : `../rendu/tensions-non-fonctionnelles.md`
-- Besoins fonctionnels / non fonctionnels : `../rendu/`
+- Cartographie des tensions non fonctionnelles : `rendu/tensions-non-fonctionnelles.md`
+- Besoins fonctionnels / non fonctionnels : `rendu/`
 - Cahier de recette : `../docs/CAHIER-DE-RECETTE.md`
 
 ## Note sur le domaine et l'implémentation

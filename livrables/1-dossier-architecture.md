@@ -623,7 +623,7 @@ coffre, éventuelle MFA, rate limiting partagé (Redis).
 
 Méthode : identifier les exigences non fonctionnelles, détecter les **tensions**,
 cartographier les options, associer avantages/inconvénients, décider et
-documenter (cf. cours). Cartographie complète : `../rendu/tensions-non-fonctionnelles.md`.
+documenter (cf. cours). Cartographie complète : `rendu/tensions-non-fonctionnelles.md`.
 
 ### 10.1 Points sensibles et points de compromis (vocabulaire ATAM)
 - **Point sensible :** la stratégie de verrouillage sur `resource_slots` — elle
