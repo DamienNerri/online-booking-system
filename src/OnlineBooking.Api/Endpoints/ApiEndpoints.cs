@@ -4,6 +4,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using OnlineBooking.Api.Common;
 using OnlineBooking.Api.Models;
+using OnlineBooking.Api.Repositories;
 using OnlineBooking.Api.Services;
 
 namespace OnlineBooking.Api.Endpoints;
@@ -13,8 +14,10 @@ public static class ApiEndpoints
     public static void MapApiEndpoints(this WebApplication app)
     {
         MapAuth(app);
+        MapMfa(app);
         MapAvailability(app);
         MapBookings(app);
+        MapAnalytics(app);
     }
 
     private static void MapAuth(WebApplication app)
@@ -26,6 +29,30 @@ public static class ApiEndpoints
 
         auth.MapPost("/login", async (LoginRequest req, AuthService svc, CancellationToken ct) =>
             Results.Ok(await svc.LoginAsync(req, ct)));
+    }
+
+    private static void MapMfa(WebApplication app)
+    {
+        var mfa = app.MapGroup("/api/auth/mfa").RequireAuthorization();
+
+        // POST /api/auth/mfa/setup — génère un secret TOTP pour l'utilisateur connecté
+        mfa.MapPost("/setup", async (ClaimsPrincipal user, MfaService svc, CancellationToken ct) =>
+        {
+            var userId = GetUserId(user);
+            var email = user.FindFirst(JwtRegisteredClaimNames.Email)?.Value ?? "user";
+            var result = await svc.SetupAsync(userId, email, ct);
+            return Results.Ok(result);
+        });
+
+        // POST /api/auth/mfa/verify — vérifie le code TOTP et active la MFA
+        mfa.MapPost("/verify", async (MfaVerifyRequest req, ClaimsPrincipal user,
+            MfaService svc, CancellationToken ct) =>
+        {
+            var userId = GetUserId(user);
+            var ok = await svc.ActivateAsync(userId, req.Code, ct);
+            if (!ok) throw new ValidationException("Code TOTP invalide ou expiré.");
+            return Results.Ok(new { message = "MFA activée avec succès." });
+        });
     }
 
     private static void MapAvailability(WebApplication app)
@@ -52,7 +79,6 @@ public static class ApiEndpoints
         // Authentification requise (Req 8).
         var bookings = app.MapGroup("/api/bookings").RequireAuthorization();
 
-        // 🔴 FIX 3 : GET /api/bookings - Lister réservations utilisateur
         bookings.MapGet("/", async (ClaimsPrincipal user,
             BookingService svc, CancellationToken ct) =>
         {
@@ -81,6 +107,24 @@ public static class ApiEndpoints
         {
             await svc.CancelAsync(id, GetUserId(user), IsAdmin(user), ct);
             return Results.NoContent();
+        });
+    }
+
+    private static void MapAnalytics(WebApplication app)
+    {
+        // Accès réservé aux ADMIN — données agrégées anonymisées (Contrainte C6)
+        var analytics = app.MapGroup("/api/admin/analytics").RequireAuthorization();
+
+        analytics.MapGet("/", async (ClaimsPrincipal user, AnalyticsRepository repo, CancellationToken ct) =>
+        {
+            if (!IsAdmin(user))
+                throw new ForbiddenException("Accès réservé aux administrateurs.");
+
+            var summary = await repo.GetSummaryAsync(ct);
+            var topRooms = await repo.GetTopRoomsAsync(10, ct);
+            var weeklyTrend = await repo.GetWeeklyTrendAsync(12, ct);
+
+            return Results.Ok(new { summary, topRooms, weeklyTrend });
         });
     }
 

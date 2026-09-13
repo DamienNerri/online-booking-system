@@ -12,3 +12,7 @@ public sealed record BookingResponse(long BookingId, string Status, DateTimeOffs
 // --- Disponibilité ---
 public sealed record AvailabilityItem(long SlotId, long ResourceId, string ResourceType,
     DateOnly PeriodStart, DateOnly PeriodEnd);
+
+// --- MFA ---
+public sealed record MfaSetupResponse(string Secret, string OtpAuthUrl);
+public sealed record MfaVerifyRequest(string Code);

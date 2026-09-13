@@ -25,6 +25,8 @@ builder.Services.AddScoped<BookingRepository>();
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<BookingService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<MfaService>();
+builder.Services.AddScoped<AnalyticsRepository>();
 
 // --- Authentification JWT (Req 8) ---
 var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()

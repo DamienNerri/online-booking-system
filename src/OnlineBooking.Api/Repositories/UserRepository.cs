@@ -48,4 +48,30 @@ public sealed class UserRepository
         }
         return new User(r.GetInt64(0), r.GetString(1), r.GetString(2), r.GetString(3));
     }
+
+    public async Task SetMfaSecretAsync(long userId, string secret, CancellationToken ct = default)
+    {
+        const string sql = "UPDATE users SET mfa_secret = @s WHERE id = @id;";
+        await using var cmd = _dataSource.CreateCommand(sql);
+        cmd.Parameters.AddWithValue("s", secret);
+        cmd.Parameters.AddWithValue("id", userId);
+        await cmd.ExecuteNonQueryAsync(ct);
+    }
+
+    public async Task<string?> GetMfaSecretAsync(long userId, CancellationToken ct = default)
+    {
+        const string sql = "SELECT mfa_secret FROM users WHERE id = @id;";
+        await using var cmd = _dataSource.CreateCommand(sql);
+        cmd.Parameters.AddWithValue("id", userId);
+        var result = await cmd.ExecuteScalarAsync(ct);
+        return result as string;
+    }
+
+    public async Task EnableMfaAsync(long userId, CancellationToken ct = default)
+    {
+        const string sql = "UPDATE users SET mfa_enabled = TRUE WHERE id = @id;";
+        await using var cmd = _dataSource.CreateCommand(sql);
+        cmd.Parameters.AddWithValue("id", userId);
+        await cmd.ExecuteNonQueryAsync(ct);
+    }
 }

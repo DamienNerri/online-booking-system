@@ -1,3 +1,21 @@
+// Enregistrement du Service Worker (offline + faible bande — Contrainte C4)
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(() => console.log('[SW] Service Worker enregistré'))
+            .catch((err) => console.warn('[SW] Enregistrement échoué :', err));
+    });
+}
+
+// Enregistrement du Service Worker (offline + faible bande — Contrainte C4)
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(() => console.log('[SW] Service Worker enregistré'))
+            .catch((err) => console.warn('[SW] Enregistrement échoué :', err));
+    });
+}
+
 // Front minimal (vanilla JS) — même origine que l'API (proxy Nginx), donc pas de CORS.
 "use strict";
 
@@ -75,6 +93,7 @@ function renderSession() {
         $("who").textContent = state.email;
         renderBookings();
         refreshNode();
+        loadAnalytics(); // tableau de bord admin si rôle ADMIN (C6)
     } else {
         show($("auth"));
         hide($("app"));
@@ -114,8 +133,15 @@ async function search() {
     const from = $("from").value;
     const to = $("to").value;
     try {
-        const items = await api(`/api/availability?type=${encodeURIComponent(type)}&from=${from}&to=${to}`);
-        renderResults(items);
+        const res = await fetch(`/api/availability?type=${encodeURIComponent(type)}&from=${from}&to=${to}`);
+        const data = await res.json();
+        // Détecte si la réponse vient du cache Service Worker (offline)
+        if (data && data.offline) {
+            message('📶 Mode hors-ligne : affichage des dernières disponibilités en cache.', 'warn');
+            return;
+        }
+        if (!res.ok) throw new Error(data?.error?.message || `Erreur HTTP ${res.status}`);
+        renderResults(data);
         refreshNode();
     } catch (e) {
         message(e.message);
@@ -312,3 +338,87 @@ $("btn-book").onclick = book;
 })();
 
 renderSession();
+
+// --- Analytics (Admin) — Contrainte C6 ---
+async function loadAnalytics() {
+    if (state.role !== 'ADMIN') return;
+    try {
+        const res = await fetch('/api/admin/analytics', {
+            headers: { 'Authorization': `Bearer ${state.token}` }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        renderAnalytics(data);
+    } catch { /* non critique */ }
+}
+
+function renderAnalytics(data) {
+    let panel = $('analytics-panel');
+    if (!panel) {
+        panel = document.createElement('section');
+        panel.id = 'analytics-panel';
+        panel.className = 'card';
+        panel.setAttribute('aria-labelledby', 'analytics-title');
+        $('app').appendChild(panel);
+    }
+
+    const s = data.summary;
+    const rooms = data.topRooms || [];
+    const trend = data.weeklyTrend || [];
+
+    panel.innerHTML = `
+        <h2 id="analytics-title">📊 Tableau de bord — Données anonymisées</h2>
+        <div class="analytics-grid">
+            <div class="stat-card">
+                <div class="stat-value">${s.total}</div>
+                <div class="stat-label">Réservations totales</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value ok">${s.confirmed}</div>
+                <div class="stat-label">Confirmées</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value warn">${s.cancelled}</div>
+                <div class="stat-label">Annulées</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value muted">${s.cancellationRatePct}%</div>
+                <div class="stat-label">Taux d'annulation</div>
+            </div>
+        </div>
+
+        <h3>Top chambres</h3>
+        <table class="analytics-table" role="table" aria-label="Réservations par chambre">
+            <thead>
+                <tr><th>Chambre</th><th>Total</th><th>Confirmées</th><th>Annulées</th><th>Taux annul.</th></tr>
+            </thead>
+            <tbody>
+                ${rooms.map(r => `
+                    <tr>
+                        <td>Chambre ${r.resourceId}</td>
+                        <td>${r.totalBookings}</td>
+                        <td class="ok">${r.confirmedBookings}</td>
+                        <td class="warn">${r.cancelledBookings}</td>
+                        <td>${r.cancellationRatePct}%</td>
+                    </tr>`).join('')}
+            </tbody>
+        </table>
+
+        <h3>Tendance hebdomadaire</h3>
+        <table class="analytics-table" role="table" aria-label="Tendance hebdomadaire des réservations">
+            <thead>
+                <tr><th>Semaine</th><th>Total</th><th>Confirmées</th><th>Annulées</th></tr>
+            </thead>
+            <tbody>
+                ${trend.map(w => `
+                    <tr>
+                        <td>${w.weekStart}</td>
+                        <td>${w.totalBookings}</td>
+                        <td class="ok">${w.confirmed}</td>
+                        <td class="warn">${w.cancelled}</td>
+                    </tr>`).join('')}
+            </tbody>
+        </table>
+        <p class="muted" style="font-size:.8rem;margin-top:.5rem">⚠️ Données agrégées — aucune information personnelle exposée (RGPD).</p>
+    `;
+}

@@ -136,27 +136,28 @@ el.addEventListener("keydown", (e) => {
 ```
 
 ### NC-2 🔴 — Focus clavier non visible (RGAA 10.7, WCAG 2.4.7 « Visibilité du focus »)
-**Constat.** Aucune règle `:focus`/`:focus-visible` dans `styles.css` ; sur fond
+**Constat initial.** Aucune règle `:focus`/`:focus-visible` dans `styles.css` ; sur fond
 sombre, l'indicateur de focus par défaut peut être peu ou pas visible.
 
-**Correction.** Ajouter un focus visible explicite et suffisamment contrasté :
+**Correction appliquée ✅** dans `styles.css` :
 ```css
 :focus-visible {
   outline: 3px solid #fbbf24;   /* jaune, fort contraste sur fond sombre */
   outline-offset: 2px;
 }
 ```
+Ce point est désormais **conforme** pour les éléments focusables natifs.
 
 ### NC-3 🟠 — Messages d'état non restitués aux lecteurs d'écran (RGAA 11.10 / 12, WCAG 4.1.3 « Messages d'état »)
-**Constat.** La zone `#message` (succès/erreur) est mise à jour par script mais
-n'a pas de rôle live ; un lecteur d'écran n'annonce pas le message (« chambre déjà
-réservée », « réservation créée »).
+**Constat initial.** La zone `#message` (succès/erreur) était mise à jour par script
+sans rôle live ; un lecteur d'écran n'annonçait pas le message.
 
-**Correction.** Déclarer une région live :
+**Correction appliquée ✅** dans `index.html` :
 ```html
-<div id="message" class="message hidden" role="status" aria-live="polite"></div>
+<div id="message" class="message hidden"
+     role="status" aria-live="polite" aria-atomic="true"></div>
 ```
-Pour les erreurs bloquantes, utiliser `role="alert"` (assertif).
+Ce point est désormais **conforme** — les messages sont annoncés automatiquement.
 
 ### NC-4 🟠 — Compte à rebours du hold non annoncé / temps limité (RGAA 13.x, WCAG 2.2.1 « Délai modifiable »)
 **Constat.** Le hold expire au bout de 5 minutes ; le compte à rebours
@@ -171,17 +172,18 @@ limité, ce qui relève du critère « délai ajustable ».
   amont de la durée disponible.
 
 ### NC-5 🟠 — Association explicite label/champ + champs obligatoires (RGAA 11.1 / 11.2, WCAG 3.3.2)
-**Constat.** L'association `label`→`input` est **implicite** (imbrication). Elle
-fonctionne mais RGAA recommande l'association **explicite** via `for`/`id`, plus
-robuste. Les champs obligatoires ne sont pas signalés programmatiquement.
+**Constat initial.** L'association `label`→`input` était **implicite** (imbrication).
+Les champs obligatoires n'étaient pas signalés programmatiquement.
 
-**Correction.**
+**Correction appliquée ✅** dans `index.html` — association explicite `for`/`id`,
+`aria-required`, `aria-describedby` et hints visibles sur tous les champs du formulaire :
 ```html
-<label for="email">Adresse e-mail <span aria-hidden="true">*</span></label>
-<input id="email" type="email" required aria-required="true"
-       autocomplete="email" aria-describedby="email-hint" />
-<p id="email-hint" class="muted">Format : vous@exemple.fr</p>
+<label for="email" data-i18n="auth.email">Email</label>
+<input id="email" type="email" autocomplete="email"
+       aria-describedby="email-hint" aria-required="true" />
+<span id="email-hint" class="field-hint">Format : adresse@domaine.fr</span>
 ```
+Ce point est désormais **conforme**.
 
 ### NC-6 🟠 — Erreurs de saisie non associées aux champs (RGAA 11.10, WCAG 3.3.1)
 **Constat.** Les erreurs (ex. dates invalides, date passée) s'affichent dans le
@@ -221,19 +223,20 @@ applicative ou le premier champ (`element.focus()`), et l'annoncer.
 | # | Critère RGAA (thème) | WCAG | Criticité | Statut |
 |---|---|---|---|---|
 | NC-1 | 7.3 Scripts / clavier | 2.1.1 | 🔴 | Non conforme |
-| NC-2 | 10.7 Focus visible | 2.4.7 | 🔴 | Non conforme |
-| NC-3 | 11/12 Messages d'état | 4.1.3 | 🟠 | Non conforme |
+| NC-2 | 10.7 Focus visible | 2.4.7 | 🔴 | ✅ Corrigé |
+| NC-3 | 11/12 Messages d'état | 4.1.3 | 🟠 | ✅ Corrigé |
 | NC-4 | 13 Temps limité | 2.2.1 | 🟠 | Partiel |
-| NC-5 | 11.1/11.2 Étiquettes | 3.3.2 | 🟠 | Partiel |
+| NC-5 | 11.1/11.2 Étiquettes | 3.3.2 | 🟠 | ✅ Corrigé |
 | NC-6 | 11.10 Erreurs | 3.3.1 | 🟠 | Non conforme |
 | NC-7 | 3.2/3.3 Contrastes | 1.4.3 | 🟡 | À vérifier |
 | NC-8 | 10 Ordre / focus | 2.4.3 | 🟡 | À vérifier |
 
 **Estimation de conformité de l'écran audité :** **partiellement conforme**. Les
 fondations (structure sémantique, langue, contrôles natifs, séparation
-contenu/présentation) sont saines ; les non-conformités portent surtout sur
-l'**opérabilité clavier** et la **restitution aux technologies d'assistance**,
-corrigibles à faible coût.
+contenu/présentation) sont saines. Les corrections NC-2, NC-3 et NC-5 ont été
+appliquées dans le code. Les non-conformités restantes portent sur
+l'**opérabilité clavier des résultats** (NC-1, bloquant) et la **restitution
+des erreurs de saisie aux technologies d'assistance** (NC-6).
 
 ---
 

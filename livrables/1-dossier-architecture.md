@@ -58,8 +58,10 @@ distribué** ; il structure l'ensemble des choix d'architecture.
 | Recherche de disponibilités | Moteur de tarification dynamique |
 | Réservation (hold → confirmation), annulation | Notifications réelles email/SMS (stub) |
 | Historique client | Dashboard gestionnaire complet |
-| Expiration automatique des holds | Mode hors-ligne (offline) |
-| Déploiement conteneurisé multi-nœuds | i18n multilingue |
+| Expiration automatique des holds | — |
+| Déploiement conteneurisé multi-nœuds | — |
+| **Mode hors-ligne partiel (Service Worker)** | Mode hors-ligne complet (mutations offline) |
+| **i18n FR / EN / AR avec RTL** | Localisation complète (formats date/monnaie) |
 
 Les éléments hors périmètre sont **identifiés, pas ignorés** : ils figurent dans
 la trajectoire d'évolution (§ 14) — application de l'heuristique *« build for
@@ -609,6 +611,13 @@ SELECT (SELECT count(*) FROM expired);
 | Abus / déni de service | **Rate limiting** fenêtre glissante par utilisateur/IP → 429 | `RateLimitMiddleware` |
 | Fuite d'information technique | Middleware mappe les exceptions, masque les détails internes | `ErrorHandlingMiddleware` |
 | Secret en clair dans le code | Secret JWT **hors code**, **validé au démarrage** (refus si vide) | `Program.cs`, user-secrets / env |
+
+> **Note MFA :** les endpoints `/api/auth/mfa/setup` et `/api/auth/mfa/verify` sont implémentés
+> (`MfaService`, `UserRepository`) et permettent à un utilisateur d'activer le TOTP sur son compte.
+> Cependant, `AuthService.LoginAsync` **ne vérifie pas encore** si la MFA est activée au moment
+> du login — un utilisateur ayant activé la MFA peut se connecter sans fournir de code TOTP.
+> Ce point est identifié comme **dette technique** (voir §13 R5) ; la correction consiste à
+> appeler `MfaService.VerifyAsync` dans `LoginAsync` lorsque `mfa_enabled = true`.
 
 **Compromis sécurité ⇄ UX (C4) :** BCrypt est volontairement lent (coût CPU au
 login), le rate limiting peut générer de rares faux positifs, la MFA ajouterait

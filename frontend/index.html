@@ -7,59 +7,127 @@
     <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <header>
-        <h1>Réservation d'Hôtel</h1>
-        <div id="session" class="session hidden">
-            <span id="who"></span>
-            <span id="node" class="node" title="Nœud ayant répondu"></span>
-            <button id="logout" class="link">Déconnexion</button>
+    <!-- WCAG 2.4.1 — Skip link : permet de sauter le header en navigation clavier/lecteur d'écran -->
+    <a href="#main-content" class="skip-link" data-i18n="skip.link">Aller au contenu principal</a>
+
+    <header role="banner">
+        <h1 data-i18n="app.title">Réservation d'Hôtel</h1>
+        <!-- Sélecteur de langue injecté par i18n.js -->
+        <div id="session" class="session hidden" aria-label="Session utilisateur">
+            <span id="who" aria-live="polite"></span>
+            <span id="node" class="node" title="Nœud ayant répondu" aria-label="Nœud serveur actif"></span>
+            <button id="logout" class="link" aria-label="Se déconnecter de la plateforme" data-i18n="nav.logout">Déconnexion</button>
         </div>
     </header>
 
-    <main>
-        <!-- Bandeau de message -->
-        <div id="message" class="message hidden"></div>
+    <main id="main-content">
+        <!-- Zone de messages — aria-live annonce les erreurs/succès aux lecteurs d'écran (WCAG 4.1.3) -->
+        <div id="message"
+             class="message hidden"
+             role="status"
+             aria-live="polite"
+             aria-atomic="true"></div>
 
         <!-- Authentification -->
-        <section id="auth" class="card">
-            <h2>Connexion</h2>
-            <label>Email <input id="email" type="email" placeholder="vous@exemple.fr" /></label>
-            <label>Mot de passe <input id="password" type="password" placeholder="8 caractères min." /></label>
-            <div class="row">
-                <button id="btn-login">Se connecter</button>
-                <button id="btn-register" class="secondary">Créer un compte</button>
+        <section id="auth" class="card" aria-labelledby="auth-title">
+            <h2 id="auth-title" data-i18n="auth.title">Connexion</h2>
+
+            <div>
+                <label for="email" data-i18n="auth.email">Email</label>
+                <input id="email"
+                       type="email"
+                       autocomplete="email"
+                       placeholder="vous@exemple.fr"
+                       aria-describedby="email-hint"
+                       aria-required="true" />
+                <span id="email-hint" class="field-hint" data-i18n="auth.email.hint">Format : adresse@domaine.fr</span>
+            </div>
+
+            <div>
+                <label for="password" data-i18n="auth.password">Mot de passe</label>
+                <input id="password"
+                       type="password"
+                       autocomplete="current-password"
+                       placeholder="8 caractères min."
+                       aria-describedby="password-hint"
+                       aria-required="true" />
+                <span id="password-hint" class="field-hint" data-i18n="auth.password.hint">Minimum 8 caractères</span>
+            </div>
+
+            <!-- Section MFA — affichée dynamiquement si MFA active -->
+            <div id="mfa-section" class="hidden">
+                <label for="mfa-code" data-i18n="auth.mfa.label">Code d'authentification (TOTP)</label>
+                <input id="mfa-code"
+                       type="text"
+                       inputmode="numeric"
+                       pattern="[0-9]{6}"
+                       maxlength="6"
+                       autocomplete="one-time-code"
+                       placeholder="000000"
+                       aria-describedby="mfa-hint"
+                       aria-required="true" />
+                <span id="mfa-hint" class="field-hint" data-i18n="auth.mfa.hint">Code à 6 chiffres de votre application (Google Authenticator, Authy…)</span>
+            </div>
+
+            <div class="row" role="group" aria-label="Actions de connexion">
+                <button id="btn-login" aria-label="Se connecter avec email et mot de passe" data-i18n="auth.login">Se connecter</button>
+                <button id="btn-register" class="secondary" aria-label="Créer un nouveau compte" data-i18n="auth.register">Créer un compte</button>
             </div>
         </section>
 
         <!-- Application (après connexion) -->
-        <section id="app" class="hidden">
-            <div class="card">
-                <h2>Rechercher une chambre</h2>
+        <section id="app" class="hidden" aria-label="Application de réservation">
+            <div class="card" aria-labelledby="search-title">
+                <h2 id="search-title" data-i18n="search.title">Rechercher une chambre</h2>
                 <div class="row">
-                    <label>Type de chambre
-                        <select id="type">
-                            <option value="HOTEL_ROOM">Chambre d'hôtel</option>
+                    <div>
+                        <label for="type" data-i18n="search.type">Type de chambre</label>
+                        <select id="type" aria-label="Sélectionner le type de chambre">
+                            <option value="HOTEL_ROOM" data-i18n="search.type.hotel">Chambre d'hôtel</option>
                         </select>
-                    </label>
-                    <label>Date d'arrivée <input id="from" type="date" /></label>
-                    <label>Date de départ <input id="to" type="date" /></label>
-                    <button id="btn-search">Rechercher</button>
+                    </div>
+                    <div>
+                        <label for="from" data-i18n="search.from">Date d'arrivée</label>
+                        <input id="from" type="date" aria-required="true" />
+                    </div>
+                    <div>
+                        <label for="to" data-i18n="search.to">Date de départ</label>
+                        <input id="to" type="date" aria-required="true" />
+                    </div>
+                    <button id="btn-search" aria-label="Lancer la recherche de chambres disponibles" data-i18n="search.btn">Rechercher</button>
                 </div>
-                <div id="results" class="results"></div>
-                <button id="btn-book" class="hidden">Réserver ces chambres</button>
+
+                <!-- aria-live pour annoncer les nouveaux résultats sans déplacer le focus -->
+                <div id="results"
+                     class="results"
+                     role="list"
+                     aria-live="polite"
+                     aria-label="Chambres disponibles"></div>
+
+                <button id="btn-book"
+                        class="hidden"
+                        aria-label="Réserver les chambres sélectionnées"
+                        data-i18n="search.book">Réserver ces chambres</button>
             </div>
 
-            <div class="card">
-                <h2>Mes réservations</h2>
-                <div id="bookings" class="bookings"><p class="muted">Aucune réservation pour l'instant.</p></div>
+            <div class="card" aria-labelledby="bookings-title">
+                <h2 id="bookings-title" data-i18n="bookings.title">Mes réservations</h2>
+                <div id="bookings"
+                     class="bookings"
+                     role="list"
+                     aria-live="polite"
+                     aria-label="Liste de vos réservations">
+                    <p class="muted" data-i18n="bookings.empty">Aucune réservation pour l'instant.</p>
+                </div>
             </div>
         </section>
     </main>
 
-    <footer>
-        <span>Système distribué — ASP.NET Core · PostgreSQL · Nginx</span>
+    <footer role="contentinfo">
+        <span data-i18n="footer.tech">Système distribué — ASP.NET Core · PostgreSQL · Nginx</span>
     </footer>
 
+    <script src="i18n.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

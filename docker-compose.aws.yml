@@ -1,0 +1,88 @@
+# docker-compose.aws.yml — Déploiement AWS (EC2 + RDS externe)
+#
+# Différences vs docker-compose.yml :
+#   • Pas de service postgres (remplacé par Amazon RDS)
+#   • Variables d'env depuis .env.production
+#   • Port 80 standard (ALB en frontal en prod réelle)
+#   • Logs vers stdout (collectés par l'agent CloudWatch)
+#   • Même code, même image Docker — zéro refonte
+#
+# Utilisation :
+#   cp .env.production.example .env.production   # remplir les valeurs
+#   docker compose -f docker-compose.aws.yml up -d --build
+
+services:
+  api1:
+    build: .
+    env_file: .env.production
+    environment:
+      NODE_ID: api1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  api2:
+    build: .
+    env_file: .env.production
+    environment:
+      NODE_ID: api2
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  api3:
+    build: .
+    env_file: .env.production
+    environment:
+      NODE_ID: api3
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "${EXTERNAL_PORT:-80}:80"
+    volumes:
+      - ./infra/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - api1
+      - api2
+      - api3
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Note : en prod AWS réelle, remplacer ce docker-compose par :
+#   - ECS Fargate (tasks) + ALB (load balancer) + RDS PostgreSQL
+#   - Même image Docker pushée sur ECR
+#   - Même variables d'env dans AWS Secrets Manager / Parameter Store
+#   - Zéro modification du code applicatif
